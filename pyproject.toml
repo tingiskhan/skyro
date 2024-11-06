@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skyro"
+dynamic = ["version"]
+description = "Utilities for integrating sklearn and numpyro"
+authors = [
+  { name = "Victor Gruselius", email="victor.gruselius@gmail.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpyro",
+    "scikit-learn",
+    "pandas",
+    "sktime",
+    "skbase",
+    "skpro",
+]
+
+[project.optional-dependencies]
+dev = [
+    "isort",
+    "black",
+    "ruff",
+    "flake8",
+    "pre-commit",
+    "pytest",
+    "coverage",
+]
+
+viz = [
+    "arviz",
+]
+
+[tool.setuptools.packages.find]
+include = ["skyro*"]
+
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+)/
+'''
+
+[tool.ruff]
+line-length = 120
+
+[tool.bumpver]
+current_version = "0.0.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = false
+tag = false
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+]
+
+"skyro/__init__.py" = [
+    '__version__ = "{version}"'
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "skyro.__version__"}
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
