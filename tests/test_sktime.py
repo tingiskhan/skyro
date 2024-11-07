@@ -62,7 +62,7 @@ def test_autoregressive():
 
     fh = np.arange(1, 12)
     predictions = model.predict(fh)
-    assert ...
+    assert predictions.shape[0] == fh.shape[0]
 
     with BytesIO() as f:
         joblib.dump(model, f)
@@ -73,7 +73,7 @@ def test_autoregressive():
     new_predictions = new_model.predict(fh)
     assert new_predictions.index.equals(predictions.index)
 
-    proba = new_model.predict_proba(np.arange(1, 12))
-    model.update(new_predictions)
+    fh = np.arange(1, 12)
+    proba = new_model.predict_proba(fh)
 
-    assert ...
+    assert proba.shape == (fh.shape[0], 1)
