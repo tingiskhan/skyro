@@ -89,9 +89,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return {k: np.array(v) for k, v in output.items()}
 
-    def _do_predict(
-        self, fh: ForecastingHorizon, X=None, context: str = None, full_posterior: bool = False
-    ) -> Tuple[np.ndarray, ForecastingHorizon]:
+    def _do_predict(self, fh: ForecastingHorizon, X=None, full_posterior: bool = False) -> np.ndarray:
         if self._X is not None and not self.get_tag("ignores-exogeneous-X"):
             # TODO: need to use numpy depending on mtype
             X = pd.concat([self._X, X], axis=0, verify_integrity=True)
@@ -102,20 +100,23 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         slice_index = fh.to_absolute_int(self._y.index.min(), self.cutoff) if self._y is not None else actual_index
 
         # TODO: this is not really correct as we'll need to select on the last time axis
-        output = self.make_output(predictions, context=context)[..., slice_index]
+        output = self.select_output(predictions)[..., slice_index]
+
+        if not full_posterior:
+            output = self.reduce(output)
+
         output = map_to_output(output, self._y, fh=actual_index, full_posterior=full_posterior)
 
         return output
 
     def _predict(self, fh, X):
-        output = self._do_predict(fh, X, context="predict")
-        # TODO: format correctly
+        output = self._do_predict(fh, X)
         return output
 
     def _predict_proba(self, fh, X, marginal=True):
         from skpro.distributions.empirical import Empirical
 
-        predictions = self._do_predict(fh, X, context="predict_proba", full_posterior=True)
+        predictions = self._do_predict(fh, X, full_posterior=True)
 
         if isinstance(predictions, pd.Series):
             predictions = predictions.to_frame()

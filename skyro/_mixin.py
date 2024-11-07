@@ -3,17 +3,18 @@ from contextlib import contextmanager
 from functools import cached_property
 from operator import attrgetter
 from random import randint
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 
 import jax.numpy as jnp
+import numpy as np
 from jax.random import PRNGKey
 from numpyro.diagnostics import summary
 from numpyro.infer import MCMC, NUTS
 
 if sys.version_info >= (3, 11):
-    from typing import Self
+    from typing import Self, Unpack
 else:
-    from typing_extensions import Self
+    from typing_extensions import Self, Unpack
 
 from ._result import NumpyroResultSet
 from .exc import ConvergenceError
@@ -55,6 +56,19 @@ class BaseNumpyroMixin:
 
         self._is_vectorized = False
         self._prior_predictive = False
+
+    def reduce(self, posterior: np.ndarray) -> np.ndarray:
+        """
+        Reduces the prediction posterior to a single moment.
+
+        Args:
+            posterior: Posterior of the variable.
+
+        Returns:
+            Returns a :class:`numpy.ndarray`.
+        """
+
+        return np.mean(posterior, axis=0)
 
     def build_model(self, *args, **kwargs):
         """
@@ -139,14 +153,12 @@ class BaseNumpyroMixin:
 
         raise NotImplementedError("abstract method")
 
-    def make_output(self, x: Dict[str, jnp.ndarray], context: str = None) -> jnp.ndarray:
+    def select_output(self, x: Dict[str, jnp.ndarray]) -> jnp.ndarray:
         """
         Abstract method overridden by derived classes to format output given returned predictions.
 
         Args:
             x: Samples.
-            context: Returns the context in which the function is called. Can be safely ignored for :class:`sklearn`
-                like estimators.
 
         Returns:
             Returns samples.

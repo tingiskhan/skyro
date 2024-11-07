@@ -67,10 +67,12 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
     def predict(self, X, full_posterior: bool = False, **kwargs):
         ppc = self._do_sample(X, **kwargs)
 
-        if full_posterior:
-            return ppc
+        output = self.select_output(ppc)
 
-        return self.make_output(ppc)
+        if full_posterior:
+            return output
+
+        return self.reduce(output)
 
     @contextmanager
     def prior_predictive(self, **kwargs) -> Self:
