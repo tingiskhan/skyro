@@ -25,6 +25,8 @@ class AutoRegressive(BaseNumpyroForecaster):
     Implements a basic Auto-Regressive model of order 1.
     """
 
+    moment_selector = np.mean
+
     def build_model(self, y, length: int, X=None, future=0, **kwargs):
         # parameters
         mu = numpyro.sample("mu", Normal())
@@ -41,15 +43,8 @@ class AutoRegressive(BaseNumpyroForecaster):
 
         return
 
-    def make_output(self, x, context: str = None):
-        result = x["y"]
-
-        if context == "predict":
-            return np.mean(result, axis=0)
-        elif context == "predict_proba":
-            return result
-
-        raise NotImplementedError("not implemented!")
+    def select_output(self, x):
+        return x["y"]
 
 
 def test_autoregressive():
@@ -67,7 +62,7 @@ def test_autoregressive():
 
     fh = np.arange(1, 12)
     predictions = model.predict(fh)
-    assert ...
+    assert predictions.shape[0] == fh.shape[0]
 
     with BytesIO() as f:
         joblib.dump(model, f)
@@ -78,7 +73,7 @@ def test_autoregressive():
     new_predictions = new_model.predict(fh)
     assert new_predictions.index.equals(predictions.index)
 
-    proba = new_model.predict_proba(np.arange(1, 12))
-    model.update(new_predictions)
+    fh = np.arange(1, 12)
+    proba = new_model.predict_proba(fh)
 
-    assert ...
+    assert proba.shape == (fh.shape[0], 1)

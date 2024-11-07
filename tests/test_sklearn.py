@@ -6,6 +6,7 @@ from skyro import BaseNumpyroEstimator
 
 
 class LinearRegression(BaseNumpyroEstimator):
+
     def build_model(self, X, y=None, **kwargs):
         with numpyro.plate("temp", X.shape[-1]):
             beta = numpyro.sample("beta", Normal())
@@ -17,8 +18,8 @@ class LinearRegression(BaseNumpyroEstimator):
 
         return
 
-    def make_output(self, x, context: str = None):
-        return np.mean(x["y"], axis=0)
+    def select_output(self, x, context: str = None):
+        return x["y"]
 
 
 def test_sklearn():
@@ -41,4 +42,4 @@ def test_sklearn():
 
     y_hat_posterior = model.predict(x, full_posterior=True)
 
-    assert y_hat_posterior["y"].shape == (model.num_samples * model.num_chains,) + y.shape
+    assert y_hat_posterior.shape == (model.num_samples * model.num_chains,) + y.shape
