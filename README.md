@@ -1,7 +1,7 @@
 # skyro
 
-Do you love the scikit-learn API, and numpyro but struggle to use them in conjunction? Well, look no further
-then. This library provides a wrapper for numpyro models using scikit-learn (like) API via the great 
+Do you love the scikit-learn API and numpyro, but struggle to use them in conjunction? Well, look no further
+then. This library provides a lightweight wrapper for numpyro models using scikit-learn (like) API via the great 
 [skbase](https://github.com/sktime/skbase). 
 
 ## Installation
