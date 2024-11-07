@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from operator import attrgetter
 from random import randint
-from typing import Any, Dict, Callable
+from typing import Any, Dict
 
 import jax.numpy as jnp
 import numpy as np
@@ -12,9 +12,9 @@ from numpyro.diagnostics import summary
 from numpyro.infer import MCMC, NUTS
 
 if sys.version_info >= (3, 11):
-    from typing import Self, Unpack
+    from typing import Self
 else:
-    from typing_extensions import Self, Unpack
+    from typing_extensions import Self
 
 from ._result import NumpyroResultSet
 from .exc import ConvergenceError
