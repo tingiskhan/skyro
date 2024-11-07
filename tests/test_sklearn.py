@@ -22,6 +22,8 @@ class LinearRegression(BaseNumpyroEstimator):
 
 
 def test_sklearn():
+    np.random.seed(123)
+
     x = np.random.normal(size=(1_000, 3))
 
     weights = np.random.normal(size=3)
