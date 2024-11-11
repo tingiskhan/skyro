@@ -10,6 +10,7 @@ import numpy as np
 from jax.random import PRNGKey
 from numpyro.diagnostics import summary
 from numpyro.infer import MCMC, NUTS
+from numpyro.infer.mcmc import MCMCKernel
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -86,9 +87,22 @@ class BaseNumpyroMixin:
     def _get_key(self) -> PRNGKey:
         return PRNGKey(self.seed or randint(0, 1_000))
 
+    def build_kernel(self, **kwargs) -> MCMCKernel:
+        """
+        Utility for building model specific kernel. Otherwise defaults to NUTS.
+
+        Args:
+            **kwargs: Kwargs passed in class' __init__.
+
+        Returns:
+            Returns a :class:`MCMCKernel`.
+        """
+
+        return NUTS(self.build_model, **kwargs)
+
     @cached_property
     def mcmc(self) -> MCMC:
-        kernel = NUTS(self.build_model, **(self.kernel_kwargs or {}))
+        kernel = self.build_kernel(**self.kernel_kwargs)
 
         mcmc = MCMC(
             kernel,
