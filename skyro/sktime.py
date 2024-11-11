@@ -130,7 +130,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         predictions = self._do_predict(fh, X, full_posterior=True)
 
         if isinstance(predictions, pd.Series):
-            predictions = predictions.to_frame()
+            predictions = predictions.to_frame(self._y.name)
 
         return Empirical(predictions, time_indep=False)
 
