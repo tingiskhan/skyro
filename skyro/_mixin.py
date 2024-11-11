@@ -43,6 +43,7 @@ class BaseNumpyroMixin:
         seed: int = None,
         progress_bar: bool = False,
         kernel_kwargs: Dict[str, Any] = None,
+        model_kwargs: Dict[str, Any] = None,
     ):
         self.num_samples = num_samples
         self.num_warmup = num_warmup
@@ -51,6 +52,8 @@ class BaseNumpyroMixin:
         self.kernel_kwargs = kernel_kwargs
         self.seed = seed
         self.progress_bar = progress_bar
+
+        self.model_kwargs = model_kwargs or {}
 
         self.result_set_: NumpyroResultSet = None
 

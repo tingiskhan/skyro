@@ -41,6 +41,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         seed: int = None,
         progress_bar: bool = False,
         kernel_kwargs: Dict[str, Any] = None,
+        model_kwargs: Dict[str, Any] = None,
     ):
 
         super().__init__(
@@ -51,6 +52,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             seed=seed,
             progress_bar=progress_bar,
             kernel_kwargs=kernel_kwargs,
+            model_kwargs=model_kwargs,
         )
         BaseForecaster.__init__(self)
 
@@ -62,7 +64,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         length = y.shape[0]
 
-        self.mcmc.run(key, X=X, y=y, length=length, future=0)
+        self.mcmc.run(key, X=X, y=y, length=length, future=0, **self.model_kwargs)
         self.result_set_ = self._process_results(self.mcmc)
 
         return

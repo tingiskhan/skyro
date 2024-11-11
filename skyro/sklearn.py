@@ -29,6 +29,7 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
         seed: int = None,
         progress_bar: bool = False,
         kernel_kwargs: Dict[str, Any] = None,
+        model_kwargs: Dict[str, Any] = None,
     ):
         super().__init__(
             num_samples=num_samples,
@@ -38,6 +39,7 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
             seed=seed,
             progress_bar=progress_bar,
             kernel_kwargs=kernel_kwargs,
+            model_kwargs=model_kwargs,
         )
         BaseEstimator.__init__(self)
 
@@ -47,7 +49,7 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
     def fit(self, X, y=None):
         key = self._get_key()
 
-        self.mcmc.run(key, X=X, y=y)
+        self.mcmc.run(key, X=X, y=y, **self.model_kwargs)
         self.result_set_ = self._process_results(self.mcmc)
 
         self._is_fitted = True
