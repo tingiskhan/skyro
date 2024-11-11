@@ -192,6 +192,7 @@ class BaseNumpyroMixin:
         sub_samples = {k: v for k, v in samples.items() if k in sites}
         s = summary(sub_samples, group_by_chain=self.group_by_chain)
 
+        # TODO: need to handle case when some of the dimensions of the variables are nan
         for name, summary_ in s.items():
             if (summary_["r_hat"] <= self.max_rhat).all():
                 continue
