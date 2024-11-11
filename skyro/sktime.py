@@ -71,6 +71,17 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         return
 
     def _do_sample(self, fh: ForecastingHorizon, X=None) -> Dict[str, np.ndarray]:
+        """
+        Helper function for performing sampling via :class:`Predictive`.
+
+        Args:
+            fh: Forecasting horizon.
+            X: Exogenous variables.
+
+        Returns:
+            Returns the full trace returned by :class:`Predictive`. Samples are __not__ grouped by chain.
+        """
+
         samples = None if self._prior_predictive else self.result_set_.get_samples(group_by_chain=False)
         predictive = Predictive(
             self.build_model, posterior_samples=samples, num_samples=self.num_samples if samples is None else None
@@ -102,8 +113,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         actual_index = fh.to_absolute(self.cutoff)
         slice_index = fh.to_absolute_int(self._y.index.min(), self.cutoff) if self._y is not None else actual_index
 
-        # TODO: this is not really correct as we'll need to select on the last time axis
-        output = self.select_output(predictions)[..., slice_index]
+        output = self.select_output(predictions)[:, slice_index]
 
         if not full_posterior:
             output = self.reduce(output)
