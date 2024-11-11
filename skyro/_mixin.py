@@ -42,7 +42,7 @@ class BaseNumpyroMixin:
         num_chains: int = 1,
         chain_method: str = "parallel",
         seed: int = None,
-        progress_bar: bool = False,
+        progress_bar: bool = True,
         kernel_kwargs: Dict[str, Any] = None,
         model_kwargs: Dict[str, Any] = None,
     ):
@@ -50,7 +50,7 @@ class BaseNumpyroMixin:
         self.num_warmup = num_warmup
         self.num_chains = num_chains
         self.chain_method = chain_method
-        self.kernel_kwargs = kernel_kwargs
+        self.kernel_kwargs = kernel_kwargs or {}
         self.seed = seed
         self.progress_bar = progress_bar
 
