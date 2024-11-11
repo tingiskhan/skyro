@@ -6,6 +6,7 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 from numpyro.infer import Predictive
+from skpro.distributions.empirical import Empirical
 from sktime.forecasting.base import BaseForecaster, ForecastingHorizon
 
 if sys.version_info >= (3, 11):
@@ -116,8 +117,6 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         return output
 
     def _predict_proba(self, fh, X, marginal=True):
-        from skpro.distributions.empirical import Empirical
-
         predictions = self._do_predict(fh, X, full_posterior=True)
 
         if isinstance(predictions, pd.Series):
