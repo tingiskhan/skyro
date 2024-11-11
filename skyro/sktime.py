@@ -132,7 +132,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         if isinstance(predictions, pd.Series):
             predictions = predictions.to_frame()
 
-        return Empirical(predictions)
+        return Empirical(predictions, time_indep=False)
 
     @contextmanager
     def prior_predictive(self, *, output: OutputType = "np.ndarray") -> Self:
