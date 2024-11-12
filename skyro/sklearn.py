@@ -49,7 +49,7 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
     def fit(self, X, y=None):
         key = self._get_key()
 
-        self.mcmc.run(key, X=X, y=y, **self.model_kwargs)
+        self.mcmc.run(key, X=X, y=y, **(self.model_kwargs or {}))
         self.result_set_ = self._process_results(self.mcmc)
 
         self._is_fitted = True
@@ -62,7 +62,7 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
             self.build_model, posterior_samples=samples, num_samples=self.num_samples if samples is None else None
         )
 
-        output = predictive(self._get_key(), X=X, **kwargs)
+        output = predictive(self._get_key(), X=X, **(self.model_kwargs or {}), **kwargs)
 
         return {k: np.array(v) for k, v in output.items()}
 

@@ -50,11 +50,11 @@ class BaseNumpyroMixin:
         self.num_warmup = num_warmup
         self.num_chains = num_chains
         self.chain_method = chain_method
-        self.kernel_kwargs = kernel_kwargs or {}
+        self.kernel_kwargs = kernel_kwargs
         self.seed = seed
         self.progress_bar = progress_bar
 
-        self.model_kwargs = model_kwargs or {}
+        self.model_kwargs = model_kwargs
 
         self.result_set_: NumpyroResultSet = None
 
@@ -102,7 +102,7 @@ class BaseNumpyroMixin:
 
     @cached_property
     def mcmc(self) -> MCMC:
-        kernel = self.build_kernel(**self.kernel_kwargs)
+        kernel = self.build_kernel(**(self.kernel_kwargs or {}))
 
         mcmc = MCMC(
             kernel,

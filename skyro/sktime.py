@@ -65,7 +65,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         length = y.shape[0]
 
-        self.mcmc.run(key, X=X, y=y, length=length, future=0, **self.model_kwargs)
+        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}))
         self.result_set_ = self._process_results(self.mcmc)
 
         return
@@ -99,7 +99,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             future = horizon
             y = self._y
 
-        output = predictive(self._get_key(), y=y, X=X, length=length, future=future)
+        output = predictive(self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}))
 
         return {k: np.array(v) for k, v in output.items()}
 
