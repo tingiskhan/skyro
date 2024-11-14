@@ -67,7 +67,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         length = y.shape[0]
 
-        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}), **self.__dynamic_args)
+        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}), **self.dynamic_args)
         self.result_set_ = self._process_results(self.mcmc)
 
         return
