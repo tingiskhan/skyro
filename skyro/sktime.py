@@ -57,7 +57,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         )
         BaseForecaster.__init__(self)
 
-        self.dynamic_args: Dict[str, Any] = {}
+        self.__dynamic_args: Dict[str, Any] = {}
 
     def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
         raise NotImplementedError("abstract method")
@@ -67,7 +67,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         length = y.shape[0]
 
-        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}), **self.dynamic_args)
+        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}), **self.__dynamic_args)
         self.result_set_ = self._process_results(self.mcmc)
 
         return
@@ -102,7 +102,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             y = self._y
 
         output = predictive(
-            self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}), **self.dynamic_args
+            self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}), **self.__dynamic_args
         )
 
         return {k: np.array(v) for k, v in output.items()}
@@ -191,12 +191,12 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             Returns :class:`Self`.
         """
 
-        old = deepcopy(self.dynamic_args)
+        old = deepcopy(self.__dynamic_args)
 
         try:
-            self.dynamic_args.update(kwargs)
+            self.__dynamic_args.update(kwargs)
             yield self
         finally:
-            self.dynamic_args = old
+            self.__dynamic_args = old
 
         return
