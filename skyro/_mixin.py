@@ -194,7 +194,11 @@ class BaseNumpyroMixin:
 
         # TODO: need to handle case when some of the dimensions of the variables are nan
         for name, summary_ in s.items():
-            if (summary_["r_hat"] <= self.max_rhat).all():
+            # NB: some variables have deterministic elements (s.a. samples from LKJCov).
+            mask = np.isnan(summary_["n_eff"])
+            r_hat = summary_["r_hat"][~mask]
+
+            if (r_hat <= self.max_rhat).all():
                 continue
 
             raise ConvergenceError(f"Parameter '{name}' did not converge!")
