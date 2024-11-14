@@ -26,6 +26,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     Implements a base class for forecasters utilizing :class:`numpyro`.
     """
 
+    dynamic_args: Dict[str, Any] = {}
+
     _tags = {
         "capability:insample": True,
         "capability:pred_int": True,
@@ -56,8 +58,6 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             model_kwargs=model_kwargs,
         )
         BaseForecaster.__init__(self)
-
-        self.__dynamic_args: Dict[str, Any] = {}
 
     def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
         raise NotImplementedError("abstract method")
@@ -102,7 +102,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             y = self._y
 
         output = predictive(
-            self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}), **self.__dynamic_args
+            self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}), **self.dynamic_args
         )
 
         return {k: np.array(v) for k, v in output.items()}
@@ -191,12 +191,12 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             Returns :class:`Self`.
         """
 
-        old = deepcopy(self.__dynamic_args)
+        old = deepcopy(self.dynamic_args)
 
         try:
-            self.__dynamic_args.update(kwargs)
+            self.dynamic_args.update(kwargs)
             yield self
         finally:
-            self.__dynamic_args = old
+            self.dynamic_args = old
 
         return
