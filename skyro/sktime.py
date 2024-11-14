@@ -92,7 +92,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         length = self._y.shape[0] if self._y is not None else 0
 
         future = 0
-        horizon = fh.to_relative().max() + 1
+        horizon = fh.to_relative(cutoff=self.cutoff).max() + 1
 
         if self._prior_predictive:
             length = horizon
@@ -115,6 +115,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         predictions = self._do_sample(fh, X)
 
         actual_index = fh.to_absolute(self.cutoff)
+
+        # TODO: need to figure out how to do this one...
         slice_index = fh.to_absolute_int(self._y.index.min(), self.cutoff) if self._y is not None else actual_index
 
         output = self.select_output(predictions)[:, slice_index]
