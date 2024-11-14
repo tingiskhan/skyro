@@ -1,5 +1,6 @@
 import sys
 from contextlib import contextmanager
+from copy import deepcopy
 from operator import attrgetter
 from typing import Any, Dict
 
@@ -44,7 +45,6 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         kernel_kwargs: Dict[str, Any] = None,
         model_kwargs: Dict[str, Any] = None,
     ):
-
         super().__init__(
             num_samples=num_samples,
             num_warmup=num_warmup,
@@ -57,6 +57,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         )
         BaseForecaster.__init__(self)
 
+        self.dynamic_args: Dict[str, Any] = {}
+
     def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
         raise NotImplementedError("abstract method")
 
@@ -65,7 +67,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         length = y.shape[0]
 
-        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}))
+        self.mcmc.run(key, X=X, y=y, length=length, future=0, **(self.model_kwargs or {}), **self.dynamic_args)
         self.result_set_ = self._process_results(self.mcmc)
 
         return
@@ -99,7 +101,9 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             future = horizon
             y = self._y
 
-        output = predictive(self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}))
+        output = predictive(
+            self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}), **self.dynamic_args
+        )
 
         return {k: np.array(v) for k, v in output.items()}
 
@@ -170,5 +174,29 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             delta = set([a for a, _ in attrs_to_override]) - set([a for a, _ in current_attrs])
             for d in delta:
                 delattr(self, d)
+
+        return
+
+    @contextmanager
+    def set_dynamic_args(self, **kwargs) -> Self:
+        """
+        When modelling in numpyro you sometimes require setting parameters that don't fit into sktime's input API (but
+        scikit-learns' in terms of allowing passing kwargs). This is a workaround for that by utilizing a context
+        manager.
+
+        Args:
+            **kwargs: Any variables.
+
+        Returns:
+            Returns :class:`Self`.
+        """
+
+        old = deepcopy(self.dynamic_args)
+
+        try:
+            self.dynamic_args.update(kwargs)
+            yield self
+        finally:
+            self.dynamic_args = old
 
         return
