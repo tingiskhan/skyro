@@ -10,7 +10,7 @@ def test_forecaster_base_functionality():
 
     expected = {
         "chain_method": "parallel",
-        "kernel_kwargs": {},
+        "kernel_kwargs": None,
         "num_chains": 1,
         "num_samples": 1,
         "progress_bar": False,
