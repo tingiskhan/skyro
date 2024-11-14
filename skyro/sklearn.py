@@ -66,6 +66,19 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
 
         return {k: np.array(v) for k, v in output.items()}
 
+    def select_output(self, x: Dict[str, np.ndarray]) -> np.ndarray:
+        """
+        Abstract method overridden by derived classes to format output given returned predictions.
+
+        Args:
+            x: Samples.
+
+        Returns:
+            Returns samples.
+        """
+
+        raise NotImplementedError("abstract method")
+
     def predict(self, X, full_posterior: bool = False, **kwargs):
         ppc = self._do_sample(X, **kwargs)
 

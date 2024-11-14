@@ -170,19 +170,6 @@ class BaseNumpyroMixin:
 
         raise NotImplementedError("abstract method")
 
-    def select_output(self, x: Dict[str, jnp.ndarray]) -> jnp.ndarray:
-        """
-        Abstract method overridden by derived classes to format output given returned predictions.
-
-        Args:
-            x: Samples.
-
-        Returns:
-            Returns samples.
-        """
-
-        raise NotImplementedError("abstract method")
-
     def _process_results(self, mcmc: MCMC) -> NumpyroResultSet:
         # fetch sample sites
         sites = attrgetter(mcmc._sample_field)(mcmc._last_state)
