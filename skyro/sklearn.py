@@ -56,8 +56,8 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
 
         return
 
-    def _do_sample(self, X, **kwargs) -> Dict[str, np.ndarray]:
-        samples = None if self._prior_predictive else self.result_set_.get_samples(group_by_chain=False)
+    def _do_sample(self, X, prior_predictive: bool = False, **kwargs) -> Dict[str, np.ndarray]:
+        samples = None if prior_predictive else self.result_set_.get_samples(group_by_chain=False)
         predictive = Predictive(
             self.build_model, posterior_samples=samples, num_samples=self.num_samples if samples is None else None
         )
@@ -89,14 +89,5 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
 
         return self.reduce(output)
 
-    @contextmanager
-    def prior_predictive(self, **kwargs) -> Self:
-        try:
-            self._prior_predictive = True
-            yield self
-        except Exception:
-            raise
-        finally:
-            self._prior_predictive = False
-
-        return
+    def prior_predictive(self, X, **kwargs) -> Self:
+        return self._do_sample(X=X)

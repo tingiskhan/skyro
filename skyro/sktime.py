@@ -9,6 +9,7 @@ import pandas as pd
 from numpyro.infer import Predictive
 from skpro.distributions.empirical import Empirical
 from sktime.forecasting.base import BaseForecaster, ForecastingHorizon
+from xarray import DataArray
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -72,40 +73,49 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return
 
-    def _do_sample(self, fh: ForecastingHorizon, X=None) -> Dict[str, np.ndarray]:
+    def _do_sample(self, length: int, horizon: int, X=None, prior_predictive: bool = False) -> Dict[str, np.ndarray]:
         """
         Helper function for performing sampling via :class:`Predictive`.
 
         Args:
-            fh: Forecasting horizon.
+            length: Length to forecast.
+            horizon: Forecasting horizon.
             X: Exogenous variables.
+            prior_predictive: Whether to use prior samples.
 
         Returns:
             Returns the full trace returned by :class:`Predictive`. Samples are __not__ grouped by chain.
         """
 
-        samples = None if self._prior_predictive else self.result_set_.get_samples(group_by_chain=False)
+        samples = None if prior_predictive else self.result_set_.get_samples(group_by_chain=False)
         predictive = Predictive(
             self.build_model, posterior_samples=samples, num_samples=self.num_samples if samples is None else None
         )
 
-        length = self._y.shape[0] if self._y is not None else 0
-
-        future = 0
-        horizon = fh.to_relative(cutoff=self.cutoff).max() + 1
-
-        if self._prior_predictive:
-            length = horizon
-            y = None
-        else:
-            future = horizon
-            y = self._y
-
         output = predictive(
-            self._get_key(), y=y, X=X, length=length, future=future, **(self.model_kwargs or {}), **self.dynamic_args
+            self._get_key(),
+            y=self._y,
+            X=X,
+            length=length,
+            future=horizon,
+            **(self.model_kwargs or {}),
+            **self.dynamic_args,
         )
 
         return {k: np.array(v) for k, v in output.items()}
+
+    def format_output(self, x: Dict[str, np.ndarray], index) -> DataArray:
+        """
+        Formats output.
+
+        Args:
+            x: Sample trace.
+
+        Returns:
+            Returns a :class:`DataArray`.
+        """
+
+        raise NotImplementedError("abstract method")
 
     def _do_predict(self, fh: ForecastingHorizon, X=None, full_posterior: bool = False) -> np.ndarray:
         if self._X is not None and not self.get_tag("ignores-exogeneous-X"):
@@ -113,18 +123,14 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             X = pd.concat([self._X, X], axis=0, verify_integrity=True)
 
         predictions = self._do_sample(fh, X)
-
         actual_index = fh.to_absolute(self.cutoff)
 
         # TODO: need to figure out how to do this one...
         slice_index = fh.to_absolute_int(self._y.index.min(), self.cutoff) if self._y is not None else actual_index
-
-        output = self.select_output(predictions)[:, slice_index]
+        output = self.format_output(predictions, actual_index.to_numpy())
 
         if not full_posterior:
             output = self.reduce(output)
-
-        output = map_to_output(output, self._y, fh=actual_index, full_posterior=full_posterior)
 
         return output
 
@@ -140,44 +146,15 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return Empirical(predictions, time_indep=False)
 
-    @contextmanager
-    def prior_predictive(self, *, output: OutputType = "np.ndarray") -> Self:
+    def prior_predictive(self, length: int, X=None, **kwargs) -> Dict[str, np.ndarray]:
         """
         Does posterior/prior predictive checking.
-
-        Args:
-            output:
 
         Returns:
             Returns samples.
         """
 
-        base_mtype = {"mtype": output}
-        attrs_to_override = [
-            ("_cutoff", 0),
-            ("_is_fitted", True),
-            ("_prior_predictive", True),
-            ("_y_metadata", base_mtype),
-        ]
-
-        current_attrs = [(a, attrgetter(a)(self)) for a, _ in attrs_to_override if hasattr(self, a)]
-
-        try:
-            for a, v in attrs_to_override:
-                setattr(self, a, v)
-
-            yield self
-        except Exception:
-            raise
-        finally:
-            for a, v in current_attrs:
-                setattr(self, a, v)
-
-            delta = set([a for a, _ in attrs_to_override]) - set([a for a, _ in current_attrs])
-            for d in delta:
-                delattr(self, d)
-
-        return
+        return self._do_sample(length, horizon=0, X=X, prior_predictive=True)
 
     @contextmanager
     def set_dynamic_args(self, **kwargs) -> Self:

@@ -59,7 +59,6 @@ class BaseNumpyroMixin:
         self.result_set_: NumpyroResultSet = None
 
         self._is_vectorized = False
-        self._prior_predictive = False
 
     def reduce(self, posterior: np.ndarray) -> np.ndarray:
         """
@@ -159,8 +158,7 @@ class BaseNumpyroMixin:
 
         return
 
-    @contextmanager
-    def prior_predictive(self, **kwargs) -> Self:
+    def prior_predictive(self, **kwargs) -> Dict[str, np.ndarray]:
         """
         Does posterior/prior predictive checking.
 
