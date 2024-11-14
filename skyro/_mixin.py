@@ -1,11 +1,9 @@
 import sys
-from contextlib import contextmanager
 from functools import cached_property
 from operator import attrgetter
 from random import randint
 from typing import Any, Dict
 
-import jax.numpy as jnp
 import numpy as np
 from jax.random import PRNGKey
 from numpyro.diagnostics import summary
@@ -13,9 +11,9 @@ from numpyro.infer import MCMC, NUTS
 from numpyro.infer.mcmc import MCMCKernel
 
 if sys.version_info >= (3, 11):
-    from typing import Self
+    pass
 else:
-    from typing_extensions import Self
+    pass
 
 from ._result import NumpyroResultSet
 from .exc import ConvergenceError

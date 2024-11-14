@@ -1,7 +1,6 @@
 import sys
 from contextlib import contextmanager
 from copy import deepcopy
-from operator import attrgetter
 from typing import Any, Dict
 
 import numpy as np
@@ -17,8 +16,6 @@ else:
     from typing_extensions import Self
 
 from ._mixin import BaseNumpyroMixin
-from ._typing import OutputType
-from ._utils import map_to_output
 
 
 # TODO: do NOT support vectorization
