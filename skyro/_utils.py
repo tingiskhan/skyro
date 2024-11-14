@@ -30,6 +30,6 @@ def map_to_output(x: np.ndarray, y, fh: ForecastingHorizon = None, full_posterio
         return pd.Series(x.reshape(-1), index=index, name=y.name)
 
     if isinstance(y, pd.DataFrame):
-        return pd.DataFrame(x.reshape(-1, y.shape[-1]), columns=y.columns, index=y.index)
+        return pd.DataFrame(x.reshape(-1, y.shape[-1]), columns=y.columns, index=index)
 
     return x
