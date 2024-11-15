@@ -88,5 +88,5 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
 
         return self.reduce(output)
 
-    def prior_predictive(self, X, **kwargs) -> Self:
+    def sample_prior_predictive(self, X, **kwargs) -> Self:
         return self._do_sample(X=X)

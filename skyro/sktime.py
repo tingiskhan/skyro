@@ -143,7 +143,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return Empirical(predictions, time_indep=False)
 
-    def prior_predictive(self, length: int, X=None, **kwargs) -> Dict[str, np.ndarray]:
+    def sample_prior_predictive(self, length: int, X=None, **kwargs) -> Dict[str, np.ndarray]:
         """
         Does posterior/prior predictive checking.
 

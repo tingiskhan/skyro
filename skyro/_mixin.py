@@ -156,9 +156,9 @@ class BaseNumpyroMixin:
 
         return
 
-    def prior_predictive(self, **kwargs) -> Dict[str, np.ndarray]:
+    def sample_prior_predictive(self, **kwargs) -> Dict[str, np.ndarray]:
         """
-        Does posterior/prior predictive checking.
+        Samples from the prior predictive density.
 
         Returns:
             Returns samples.
