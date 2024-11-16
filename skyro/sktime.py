@@ -26,13 +26,6 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
     dynamic_args: Dict[str, Any] = {}
 
-    _tags = {
-        "capability:insample": True,
-        "capability:pred_int": True,
-        "capability:pred_int:insample": True,
-        "requires-fh-in-fit": False,
-    }
-
     def __init__(
         self,
         *,
@@ -56,6 +49,23 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             model_kwargs=model_kwargs,
         )
         BaseForecaster.__init__(self)
+        self.set_default_tags()
+
+    def set_default_tags(self):
+        """
+        Sets default tags for model.
+        """
+
+        self.set_tags(
+            **{
+                "capability:insample": True,
+                "capability:pred_int": True,
+                "capability:pred_int:insample": True,
+                "requires-fh-in-fit": False,
+            }
+        )
+
+        return
 
     def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
         raise NotImplementedError("abstract method")
