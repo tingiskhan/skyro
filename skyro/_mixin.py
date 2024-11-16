@@ -1,4 +1,3 @@
-import sys
 from functools import cached_property
 from operator import attrgetter
 from random import randint
@@ -9,11 +8,6 @@ from jax.random import PRNGKey
 from numpyro.diagnostics import summary
 from numpyro.infer import MCMC, NUTS
 from numpyro.infer.mcmc import MCMCKernel
-
-if sys.version_info >= (3, 11):
-    pass
-else:
-    pass
 
 from ._result import NumpyroResultSet
 from .exc import ConvergenceError

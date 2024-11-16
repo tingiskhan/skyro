@@ -1,16 +1,10 @@
-import sys
 from typing import Any, Dict
 
 import numpy as np
 from numpyro.infer import Predictive
 from skbase.base import BaseEstimator
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
-from skyro._mixin import BaseNumpyroMixin
+from ._mixin import BaseNumpyroMixin
 
 
 class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
@@ -88,5 +82,5 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
 
         return self.reduce(output)
 
-    def sample_prior_predictive(self, X, **kwargs) -> Self:
+    def sample_prior_predictive(self, X, **kwargs):
         return self._do_sample(X=X)
