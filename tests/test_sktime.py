@@ -6,6 +6,7 @@ import joblib
 import numpy as np
 import numpyro
 import pandas as pd
+import pytest
 from numpyro.contrib.control_flow import scan
 from numpyro.distributions import Normal, TransformedDistribution, HalfNormal
 from numpyro.distributions.transforms import SigmoidTransform
@@ -28,9 +29,13 @@ class AutoRegressive(BaseNumpyroForecaster):
 
     moment_selector = np.mean
 
-    def build_model(self, y, length: int, X=None, future=0, **kwargs):
+    def build_model(self, y, length: int, X=None, future=0, use_mean: bool = True, **kwargs):
         # parameters
-        mu = numpyro.sample("mu", Normal())
+        if use_mean:
+            mu = numpyro.sample("mu", Normal())
+        else:
+            mu = 0.0
+
         phi = numpyro.sample("phi", TransformedDistribution(Normal(), SigmoidTransform()))
         sigma = numpyro.sample("sigma", HalfNormal())
 
@@ -48,7 +53,8 @@ class AutoRegressive(BaseNumpyroForecaster):
         return DataArray(x["y"], dims=["draw", "time"], coords={"time": index.to_numpy()}, name="y")
 
 
-def test_autoregressive():
+@pytest.mark.parametrize("use_mean", [True, False])
+def test_autoregressive(use_mean: bool):
     model = AutoRegressive(num_warmup=1_000, num_samples=500, seed=123)
 
     samples = model.sample_prior_predictive(100)
@@ -57,11 +63,19 @@ def test_autoregressive():
     assert train.shape == (100,)
 
     train = pd.Series(train, index=pd.date_range("2024-01-01", periods=train.shape[0], freq="W"))
+    fh = np.arange(-5, 12)
 
-    model.fit(train)
+    with model.set_dynamic_args(use_mean=use_mean):
+        model.fit(train)
+        predictions = model.predict(fh)
 
-    fh = np.arange(1, 12)
-    predictions = model.predict(fh)
+    posterior = model.to_idata().posterior
+
+    if use_mean:
+        assert "mu" in posterior
+    else:
+        assert "mu" not in posterior
+
     assert predictions.shape[0] == fh.shape[0]
 
     with BytesIO() as f:
@@ -70,10 +84,9 @@ def test_autoregressive():
         f.seek(0)
         new_model = joblib.load(f)
 
-    new_predictions = new_model.predict(fh)
+    with new_model.set_dynamic_args(use_mean=use_mean):
+        new_predictions = new_model.predict(fh)
+        proba = new_model.predict_proba(fh)
+
     assert new_predictions.index.equals(predictions.index)
-
-    fh = np.arange(-5, 12)
-    proba = new_model.predict_proba(fh)
-
     assert proba.shape == (fh.shape[0], 1)
