@@ -69,7 +69,7 @@ def test_autoregressive(use_mean: bool):
         model.fit(train)
         predictions = model.predict(fh)
 
-    posterior = model.to_idata().posterior
+    posterior = model.result_set_.get_samples(group_by_chain=False)
 
     if use_mean:
         assert "mu" in posterior
