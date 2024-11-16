@@ -1,20 +1,13 @@
-import sys
-from contextlib import contextmanager
 from functools import cached_property
 from operator import attrgetter
 from random import randint
 from typing import Any, Dict
 
-import jax.numpy as jnp
 import numpy as np
 from jax.random import PRNGKey
 from numpyro.diagnostics import summary
 from numpyro.infer import MCMC, NUTS
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
+from numpyro.infer.mcmc import MCMCKernel
 
 from ._result import NumpyroResultSet
 from .exc import ConvergenceError
@@ -41,8 +34,9 @@ class BaseNumpyroMixin:
         num_chains: int = 1,
         chain_method: str = "parallel",
         seed: int = None,
-        progress_bar: bool = False,
+        progress_bar: bool = True,
         kernel_kwargs: Dict[str, Any] = None,
+        model_kwargs: Dict[str, Any] = None,
     ):
         self.num_samples = num_samples
         self.num_warmup = num_warmup
@@ -52,10 +46,11 @@ class BaseNumpyroMixin:
         self.seed = seed
         self.progress_bar = progress_bar
 
+        self.model_kwargs = model_kwargs
+
         self.result_set_: NumpyroResultSet = None
 
         self._is_vectorized = False
-        self._prior_predictive = False
 
     def reduce(self, posterior: np.ndarray) -> np.ndarray:
         """
@@ -83,9 +78,22 @@ class BaseNumpyroMixin:
     def _get_key(self) -> PRNGKey:
         return PRNGKey(self.seed or randint(0, 1_000))
 
+    def build_kernel(self, **kwargs) -> MCMCKernel:
+        """
+        Utility for building model specific kernel. Otherwise defaults to NUTS.
+
+        Args:
+            **kwargs: Kwargs passed in class' __init__.
+
+        Returns:
+            Returns a :class:`MCMCKernel`.
+        """
+
+        return NUTS(self.build_model, **kwargs)
+
     @cached_property
     def mcmc(self) -> MCMC:
-        kernel = NUTS(self.build_model, **(self.kernel_kwargs or {}))
+        kernel = self.build_kernel(**(self.kernel_kwargs or {}))
 
         mcmc = MCMC(
             kernel,
@@ -142,23 +150,9 @@ class BaseNumpyroMixin:
 
         return
 
-    @contextmanager
-    def prior_predictive(self, **kwargs) -> Self:
+    def sample_prior_predictive(self, **kwargs) -> Dict[str, np.ndarray]:
         """
-        Does posterior/prior predictive checking.
-
-        Returns:
-            Returns samples.
-        """
-
-        raise NotImplementedError("abstract method")
-
-    def select_output(self, x: Dict[str, jnp.ndarray]) -> jnp.ndarray:
-        """
-        Abstract method overridden by derived classes to format output given returned predictions.
-
-        Args:
-            x: Samples.
+        Samples from the prior predictive density.
 
         Returns:
             Returns samples.
@@ -175,8 +169,13 @@ class BaseNumpyroMixin:
         sub_samples = {k: v for k, v in samples.items() if k in sites}
         s = summary(sub_samples, group_by_chain=self.group_by_chain)
 
+        # TODO: need to handle case when some of the dimensions of the variables are nan
         for name, summary_ in s.items():
-            if (summary_["r_hat"] <= self.max_rhat).all():
+            # NB: some variables have deterministic elements (s.a. samples from LKJCov).
+            mask = np.isnan(summary_["n_eff"])
+            r_hat = summary_["r_hat"][~mask]
+
+            if (r_hat <= self.max_rhat).all():
                 continue
 
             raise ConvergenceError(f"Parameter '{name}' did not converge!")
