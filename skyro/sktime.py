@@ -115,7 +115,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         raise NotImplementedError("abstract method")
 
-    def _do_predict(self, fh: ForecastingHorizon, X=None, full_posterior: bool = False) -> np.ndarray:
+    def _do_predict(self, fh: ForecastingHorizon, X=None, full_posterior: bool = False) -> DataArray:
         if self._X is not None and not self.get_tag("ignores-exogeneous-X"):
             # TODO: need to use numpy depending on mtype
             X = pd.concat([self._X, X], axis=0, verify_integrity=True)
@@ -145,10 +145,9 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     def _predict_proba(self, fh, X, marginal=True):
         predictions = self._do_predict(fh, X, full_posterior=True)
 
-        if isinstance(predictions, pd.Series):
-            predictions = predictions.to_frame(self._y.name)
+        as_frame = predictions.to_dataframe(name=predictions.name)
 
-        return Empirical(predictions, time_indep=False)
+        return Empirical(as_frame, time_indep=False)
 
     def sample_prior_predictive(self, length: int, X=None, **kwargs) -> Dict[str, np.ndarray]:
         """
