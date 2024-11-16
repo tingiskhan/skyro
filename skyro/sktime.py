@@ -163,8 +163,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     def set_dynamic_args(self, **kwargs) -> Self:
         """
         When modelling in numpyro you sometimes require setting parameters that don't fit into sktime's input API (but
-        scikit-learns' in terms of allowing passing kwargs). This is a workaround for that by utilizing a context
-        manager.
+        scikit-learns' in terms of allowing passing kwargs) as the parameters aren't known until runtime. This is a
+        workaround for that by utilizing a context manager.
 
         Args:
             **kwargs: Any variables.
