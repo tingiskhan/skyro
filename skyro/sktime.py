@@ -60,7 +60,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             **{
                 "capability:insample": True,
                 "capability:pred_int": True,
-                "capability:pred_int:insample": True,
+                "capability:pred_int:insample": False,  # not always true, but requires not conditioning on y
                 "requires-fh-in-fit": False,
             }
         )
