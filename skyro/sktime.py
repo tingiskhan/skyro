@@ -101,12 +101,13 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return {k: np.array(v) for k, v in output.items()}
 
-    def format_output(self, x: Dict[str, np.ndarray], index) -> DataArray:
+    def format_output(self, x: Dict[str, np.ndarray], horizon: ForecastingHorizon) -> DataArray:
         """
         Formats output.
 
         Args:
             x: Sample trace.
+            horizon: Forecasting horizon.
 
         Returns:
             Returns a :class:`DataArray`.
@@ -119,12 +120,18 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             # TODO: need to use numpy depending on mtype
             X = pd.concat([self._X, X], axis=0, verify_integrity=True)
 
-        predictions = self._do_sample(fh, X)
+        length = self._y.shape[0]
+        future_index = fh.to_relative(self.cutoff).to_numpy()
+        future = future_index.max()
+
+        predictions = self._do_sample(length, horizon=future, X=X)
         actual_index = fh.to_absolute(self.cutoff)
 
         # TODO: need to figure out how to do this one...
-        slice_index = fh.to_absolute_int(self._y.index.min(), self.cutoff) if self._y is not None else actual_index
-        output = self.format_output(predictions, actual_index.to_numpy())
+        slice_index = future_index + length - 1
+
+        sliced_predictions = {k: v[:, slice_index] for k, v in predictions.items()}
+        output = self.format_output(sliced_predictions, actual_index)
 
         if not full_posterior:
             output = self.reduce(output)
