@@ -45,7 +45,7 @@ class AutoRegressive(BaseNumpyroForecaster):
         return
 
     def format_output(self, x, index):
-        return DataArray(x["y"], dims=["draw", "time"], coords={"time": index})
+        return DataArray(x["y"], dims=["draw", "time"], coords={"time": index.to_numpy()}, name="y")
 
 
 def test_autoregressive():
