@@ -1,7 +1,7 @@
 import sys
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     """
 
     dynamic_args: Dict[str, Any] = {}
+    names_in_trace: List[str]
 
     def __init__(
         self,
@@ -58,9 +59,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         self.set_tags(
             **{
-                "capability:insample": True,
                 "capability:pred_int": True,
-                "capability:pred_int:insample": True,  # not always true, but requires not conditioning on y
                 "requires-fh-in-fit": False,
             }
         )
@@ -96,7 +95,10 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         samples = None if prior_predictive else self.result_set_.get_samples(group_by_chain=False)
         predictive = Predictive(
-            self.build_model, posterior_samples=samples, num_samples=self.num_samples if samples is None else None
+            self.build_model,
+            posterior_samples=samples,
+            num_samples=self.num_samples if samples is None else None,
+            return_sites=self.names_in_trace,
         )
 
         output = predictive(
@@ -111,19 +113,39 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return {k: np.array(v) for k, v in output.items()}
 
-    def format_output(self, x: Dict[str, np.ndarray], horizon: ForecastingHorizon) -> DataArray:
+    def format_output(self, posterior: Dict[str, np.ndarray], fh: ForecastingHorizon) -> DataArray:
         """
         Formats output.
 
         Args:
-            x: Sample trace.
-            horizon: Forecasting horizon.
+            posterior: Sample trace. Keys are guaranteed to be :attr:`names_in_trace`.
+            fh: An absolute forecasting horizon.
 
         Returns:
             Returns a :class:`DataArray`.
         """
 
         raise NotImplementedError("abstract method")
+
+    def select_and_slice(
+        self, posterior: Dict[str, np.ndarray], fh: ForecastingHorizon, length: int
+    ) -> Dict[str, np.ndarray]:
+        """
+        Method for slicing and returning the trace that forms the output. Default behaviour assumes that the traces
+        contain the full history, s.t. we select using absolute indexes rather than relative. Override this method in
+        that case.
+
+        Args:
+            posterior: Posterior.
+            fh: Relative forecasting horizon.
+            length: Length of original series.
+
+        Returns:
+            Returns a dictionary of samples.
+        """
+
+        slice_index = fh.to_numpy() + length - 1
+        return {k: v[:, slice_index] for k, v in posterior.items()}
 
     def _do_predict(self, fh: ForecastingHorizon, X=None, full_posterior: bool = False) -> DataArray:
         if self._X is not None and not self.get_tag("ignores-exogeneous-X"):
@@ -137,10 +159,9 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         predictions = self._do_sample(length, horizon=future, X=X)
         actual_index = fh.to_absolute(self.cutoff)
 
-        # TODO: need to figure out how to do this one...
-        slice_index = future_index + length - 1
+        relative_fh = fh.to_relative(self.cutoff)
+        sliced_predictions = self.select_and_slice(predictions, relative_fh, length)
 
-        sliced_predictions = {k: v[:, slice_index] for k, v in predictions.items()}
         output = self.format_output(sliced_predictions, actual_index)
 
         if not full_posterior:
@@ -156,6 +177,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         predictions = self._do_predict(fh, X, full_posterior=True)
 
         as_frame = predictions.to_dataframe(name=predictions.name)
+        if predictions.ndim > 2:
+            as_frame = as_frame.squeeze(1).unstack(level=-1)
 
         return Empirical(as_frame, time_indep=False)
 
