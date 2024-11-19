@@ -166,7 +166,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         predictions = self._do_sample(length, horizon=future, y=y, X=X)
 
         # TODO: I think this needs to be handled a lot better
-        sliced_predictions = self.select_and_slice(predictions, relative_fh, 0 if self._do_ppc else length)
+        sliced_predictions = self.select_and_slice(predictions, relative_fh, length)
 
         actual_fh = fh.to_absolute(self.cutoff)
         output = self.format_output(sliced_predictions, actual_fh)
