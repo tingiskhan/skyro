@@ -8,11 +8,13 @@ import numpyro
 import pandas as pd
 import pytest
 from numpyro.contrib.control_flow import scan
-from numpyro.distributions import Normal, TransformedDistribution, HalfNormal
+from numpyro.distributions import Normal, TransformedDistribution, HalfNormal, TruncatedNormal
 from numpyro.distributions.transforms import SigmoidTransform
 from xarray import DataArray
 
 from skyro import BaseNumpyroForecaster
+
+from numpyro_sts import AutoRegressive as AR
 
 
 def _body_fn(state_tm1, _, alpha, beta, sigma):
@@ -99,8 +101,80 @@ def test_autoregressive(use_mean: bool):
         new_predictions = new_model.predict(fh)
         proba = new_model.predict_proba(fh)
 
-        with new_model.ppc():
-            ppc_predictions = new_model.predict(fh)
-
     assert new_predictions.index.equals(predictions.index)
     assert proba.shape == (fh.shape[0], 1)
+
+
+def body_fn(state_t, x_tp1, phi, mu):
+    vol_tp1 = x_tp1
+    y_t = state_t
+
+    y_tp1 = numpyro.sample("y", Normal(mu + phi * (y_t - mu), vol_tp1))
+
+    return y_tp1, y_tp1
+
+
+class StochasticVolatilityModel(BaseNumpyroForecaster):
+    """
+    Implements a stochastic volatility model with auto-correlation and a business cycle.
+    """
+
+    names_in_trace = ["y"]
+
+    def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
+        with numpyro.handlers.scope(prefix="volatility"):
+            mu = numpyro.sample("mu", Normal())
+            phi = numpyro.sample("phi", TransformedDistribution(Normal(), SigmoidTransform()))
+            sigma = numpyro.sample("sigma", HalfNormal())
+
+            x_0 = mu + sigma / jnp.sqrt(1.0 - phi**2.0) * numpyro.sample("eps_0", Normal())
+            log_volatility_model = AR(length, phi, sigma, 1, mu=mu, initial_value=x_0)
+
+            log_volatility = numpyro.sample("x", log_volatility_model)
+
+            if future > 0:
+                future_log_volatility = numpyro.sample(
+                    "x_future", log_volatility_model.predict(future, log_volatility[-1])
+                )
+                log_volatility = jnp.concat([log_volatility, future_log_volatility], axis=-2)
+
+            volatility = jnp.exp(log_volatility).squeeze(-1)
+
+        # observed
+        mu = numpyro.sample("mu", Normal())
+        phi = numpyro.sample("phi", TruncatedNormal(low=-1.0, high=1.0))
+
+        y_0 = mu + jnp.exp(x_0) / jnp.sqrt(1.0 - phi**2.0) * numpyro.sample("eps_0", Normal())
+        fun = partial(body_fn, phi=phi, mu=mu)
+
+        with numpyro.handlers.condition(data={"y": jnp.array(y) if y is not None else None}):
+            _, y = scan(fun, y_0, volatility)
+
+        return
+
+    def format_output(self, x, horizon):
+        return DataArray(
+            x["y"],
+            dims=["draw", "time"],
+            coords={"time": horizon.to_numpy()},
+            name="y",
+        )
+
+
+def test_in_sample():
+    model = StochasticVolatilityModel(
+        num_warmup=50, num_samples=10, num_chains=1, chain_method="parallel", progress_bar=True
+    )
+
+    model.max_rhat = float("inf")
+    log_returns = model.sample_prior_predictive(length=100)["y"][0]
+
+    index = pd.date_range("2024-01-01", periods=log_returns.shape[0], freq="W")
+    log_returns = pd.Series(log_returns, index=index)
+
+    model.fit(log_returns)
+
+    with model.ppc():
+        samples = model.predict_proba(log_returns.index)
+
+    return
