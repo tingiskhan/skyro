@@ -157,18 +157,17 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         # TODO: gah, this needs to be handled a lot better
         length = self._y.shape[0]
-        future_index = fh.to_relative(self.cutoff).to_numpy()
-        future = future_index.max()
+        relative_fh = fh.to_relative(self.cutoff).to_numpy()
+        future = relative_fh.max()
 
         y = self._y if not self._do_ppc else None
         predictions = self._do_sample(length, horizon=future, y=y, X=X)
-        actual_index = fh.to_absolute(self.cutoff)
 
         # TODO: I think this needs to be handled a lot better
-        relative_fh = fh.to_relative(self.cutoff)
         sliced_predictions = self.select_and_slice(predictions, relative_fh, 0 if self._do_ppc else length)
 
-        output = self.format_output(sliced_predictions, actual_index)
+        actual_fh = fh.to_absolute(self.cutoff)
+        output = self.format_output(sliced_predictions, actual_fh)
 
         if not full_posterior:
             output = self.reduce(output)
