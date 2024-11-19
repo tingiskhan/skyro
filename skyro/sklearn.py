@@ -20,7 +20,7 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
         num_chains: int = 1,
         chain_method: str = "parallel",
         seed: int = None,
-        progress_bar: bool = False,
+        progress_bar: bool = True,
         kernel_kwargs: Dict[str, Any] = None,
         model_kwargs: Dict[str, Any] = None,
     ):
