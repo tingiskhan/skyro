@@ -177,4 +177,4 @@ def test_in_sample():
     with model.ppc():
         samples = model.predict_proba(log_returns.index)
 
-    return
+    assert samples.shape[0] == log_returns.shape[0]
