@@ -155,6 +155,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             # TODO: need to use numpy depending on mtype
             X = pd.concat([self._X, X], axis=0, verify_integrity=True)
 
+        # TODO: gah, this needs to be handled a lot better
         length = self._y.shape[0]
         future_index = fh.to_relative(self.cutoff).to_numpy()
         future = future_index.max()
