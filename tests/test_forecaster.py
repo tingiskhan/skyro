@@ -13,7 +13,7 @@ def test_forecaster_base_functionality():
         "kernel_kwargs": None,
         "num_chains": 1,
         "num_samples": 1,
-        "progress_bar": False,
+        "progress_bar": True,
         "seed": None,
     }
 

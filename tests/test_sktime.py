@@ -8,7 +8,7 @@ import numpyro
 import pandas as pd
 import pytest
 from numpyro.contrib.control_flow import scan
-from numpyro.distributions import Normal, TransformedDistribution, HalfNormal
+from numpyro.distributions import Normal, TransformedDistribution, HalfNormal, TruncatedNormal
 from numpyro.distributions.transforms import SigmoidTransform
 from xarray import DataArray
 
@@ -28,6 +28,17 @@ class AutoRegressive(BaseNumpyroForecaster):
     """
 
     moment_selector = np.mean
+    names_in_trace = ["y"]
+
+    def set_default_tags(self):
+        super().set_default_tags()
+        tags = {
+            "capability:insample": False,
+            "capability:pred_int:insample": False,
+        }
+
+        self.set_tags(**tags)
+        return
 
     def build_model(self, y, length: int, X=None, future=0, use_mean: bool = True, **kwargs):
         # parameters
@@ -49,8 +60,8 @@ class AutoRegressive(BaseNumpyroForecaster):
 
         return
 
-    def format_output(self, x, index):
-        return DataArray(x["y"], dims=["draw", "time"], coords={"time": index.to_numpy()}, name="y")
+    def format_output(self, posterior, index):
+        return DataArray(posterior["y"], dims=["draw", "time"], coords={"time": index.to_numpy()}, name="y")
 
 
 @pytest.mark.parametrize("use_mean", [True, False])
@@ -63,7 +74,7 @@ def test_autoregressive(use_mean: bool):
     assert train.shape == (100,)
 
     train = pd.Series(train, index=pd.date_range("2024-01-01", periods=train.shape[0], freq="W"))
-    fh = np.arange(-5, 12)
+    fh = np.arange(1, 12)
 
     with model.set_dynamic_args(use_mean=use_mean):
         model.fit(train)
