@@ -52,6 +52,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         BaseForecaster.__init__(self)
         self.set_default_tags()
 
+        self._do_ppc = False
+
     def set_default_tags(self):
         """
         Sets default tags for model.
@@ -157,7 +159,8 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         future_index = fh.to_relative(self.cutoff).to_numpy()
         future = future_index.max()
 
-        predictions = self._do_sample(length, horizon=future, y=self._y, X=X)
+        y = self._y if not self._do_ppc else None
+        predictions = self._do_sample(length, horizon=future, y=y, X=X)
         actual_index = fh.to_absolute(self.cutoff)
 
         relative_fh = fh.to_relative(self.cutoff)
@@ -191,7 +194,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             Returns samples.
         """
 
-        return self._do_sample(length, horizon=0, X=X, prior_predictive=True)
+        return self._do_sample(length, horizon=0, y=None, X=X, prior_predictive=True)
 
     @contextmanager
     def set_dynamic_args(self, **kwargs) -> Self:
@@ -226,12 +229,10 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             Nothing.
         """
 
-        old_y = deepcopy(self._y)
-
         try:
-            self._y = None
+            self._do_ppc = True
             yield
         finally:
-            self._y = old_y
+            self._do_ppc = False
 
         return

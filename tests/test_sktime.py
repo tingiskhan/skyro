@@ -99,5 +99,8 @@ def test_autoregressive(use_mean: bool):
         new_predictions = new_model.predict(fh)
         proba = new_model.predict_proba(fh)
 
+        with new_model.ppc():
+            ppc_predictions = new_model.predict(fh)
+
     assert new_predictions.index.equals(predictions.index)
     assert proba.shape == (fh.shape[0], 1)
