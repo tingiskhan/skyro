@@ -79,13 +79,14 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         return
 
-    def _do_sample(self, length: int, horizon: int, X=None, prior_predictive: bool = False) -> Dict[str, np.ndarray]:
+    def _do_sample(self, length: int, horizon: int, y, X=None, prior_predictive: bool = False) -> Dict[str, np.ndarray]:
         """
         Helper function for performing sampling via :class:`Predictive`.
 
         Args:
             length: Length to forecast.
             horizon: Forecasting horizon.
+            y: Observed series values.
             X: Exogenous variables.
             prior_predictive: Whether to use prior samples.
 
@@ -103,7 +104,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         output = predictive(
             self._get_key(),
-            y=self._y,
+            y=y,
             X=X,
             length=length,
             future=horizon,
@@ -156,7 +157,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         future_index = fh.to_relative(self.cutoff).to_numpy()
         future = future_index.max()
 
-        predictions = self._do_sample(length, horizon=future, X=X)
+        predictions = self._do_sample(length, horizon=future, y=self._y, X=X)
         actual_index = fh.to_absolute(self.cutoff)
 
         relative_fh = fh.to_relative(self.cutoff)
@@ -213,5 +214,24 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             yield self
         finally:
             self.dynamic_args = old
+
+        return
+
+    @contextmanager
+    def ppc(self):
+        """
+        Sets observed value to `None`.
+
+        Returns:
+            Nothing.
+        """
+
+        old_y = deepcopy(self._y)
+
+        try:
+            self._y = None
+            yield
+        finally:
+            self._y = old_y
 
         return
