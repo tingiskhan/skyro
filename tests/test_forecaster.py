@@ -1,7 +1,13 @@
 import joblib
 import io
 
-from skyro import BaseNumpyroForecaster
+import pytest
+
+from skyro import BaseNumpyroForecaster, BaseNumpyroMixin
+
+
+class DummyModel(BaseNumpyroMixin):
+    expected_parameters = ["parameter_1"]
 
 
 def test_forecaster_base_functionality():
@@ -27,3 +33,10 @@ def test_forecaster_base_functionality():
     other = joblib.load(file)
 
     assert other == forecaster
+
+
+def test_assert_raises():
+    with pytest.raises(ValueError):
+        model = DummyModel(num_samples=1, num_warmup=1)
+
+    model = DummyModel(num_samples=1, num_warmup=1, model_kwargs={"parameter_1": 2})

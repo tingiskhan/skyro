@@ -1,7 +1,7 @@
 from functools import cached_property
 from operator import attrgetter
 from random import randint
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 
 import numpy as np
 from jax.random import PRNGKey
@@ -22,6 +22,8 @@ class BaseNumpyroMixin:
     Args:
         See :class:`MCMC`.
     """
+
+    expected_parameters: Sequence[str] = []
 
     group_by_chain: bool = True
     max_rhat: float = 1.1
@@ -51,6 +53,13 @@ class BaseNumpyroMixin:
         self.result_set_: NumpyroResultSet = None
 
         self._is_vectorized = False
+
+        passed_parameters = set((self.model_kwargs or {}).keys())
+        expected_parameters = set(self.expected_parameters)
+
+        if self.expected_parameters and passed_parameters != expected_parameters:
+            delta = expected_parameters - passed_parameters
+            raise ValueError(f"Model expects you to pass '{self.expected_parameters}', you're missing '{delta}'")
 
     def reduce(self, posterior: np.ndarray) -> np.ndarray:
         """
