@@ -217,6 +217,13 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
         try:
             self.dynamic_args.update(kwargs)
+
+            dynamic_parameters = set(self.dynamic_args.keys())
+            model_parameters = set((self.model_kwargs or {}).keys())
+
+            if intersection := dynamic_parameters.intersection(model_parameters):
+                raise ValueError(f"You're overriding a model parameter with a runtime parameter: '{intersection}'")
+
             yield self
         finally:
             self.dynamic_args = old

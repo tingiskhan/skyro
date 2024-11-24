@@ -55,7 +55,7 @@ class BaseNumpyroMixin:
         self._is_vectorized = False
 
         passed_parameters = set((self.model_kwargs or {}).keys())
-        expected_parameters = set(self.model_kwargs)
+        expected_parameters = set(self.expected_parameters)
 
         if self.expected_parameters and passed_parameters != expected_parameters:
             delta = expected_parameters - passed_parameters

@@ -39,10 +39,17 @@ class BaseNumpyroEstimator(BaseNumpyroMixin, BaseEstimator):
     def build_model(self, X, y=None, **kwargs):
         raise NotImplementedError("abstract method")
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, **kwargs):
         key = self._get_key()
 
-        self.mcmc.run(key, X=X, y=y, **(self.model_kwargs or {}))
+        # TODO: code duplication...
+        dynamic_parameters = set(kwargs.keys())
+        model_parameters = set((self.model_kwargs or {}).keys())
+
+        if intersection := dynamic_parameters.intersection(model_parameters):
+            raise ValueError(f"You're overriding a model parameter with a runtime parameter: '{intersection}'")
+
+        self.mcmc.run(key, X=X, y=y, **(self.model_kwargs or {}), **kwargs)
         self.result_set_ = self._process_results(self.mcmc)
 
         self._is_fitted = True
