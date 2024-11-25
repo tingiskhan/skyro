@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
-import pandas as pd
 from numpyro.infer import Predictive
 from skpro.distributions.empirical import Empirical
 from sktime.forecasting.base import BaseForecaster, ForecastingHorizon
@@ -151,10 +150,6 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         return {k: v[:, slice_index] for k, v in posterior.items()}
 
     def _do_predict(self, fh: ForecastingHorizon, X=None, full_posterior: bool = False) -> DataArray:
-        if self._X is not None and not self.get_tag("ignores-exogeneous-X"):
-            # TODO: need to use numpy depending on mtype
-            X = pd.concat([self._X, X], axis=0, verify_integrity=True)
-
         # TODO: gah, this needs to be handled a lot better
         length = self._y.shape[0]
         relative_fh = fh.to_relative(self.cutoff)
