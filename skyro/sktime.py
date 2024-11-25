@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
-import pandas as pd
 from numpyro.infer import Predictive
 from skpro.distributions.empirical import Empirical
 from sktime.forecasting.base import BaseForecaster, ForecastingHorizon
