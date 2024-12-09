@@ -27,18 +27,14 @@ class AutoRegressive(BaseNumpyroForecaster):
     Implements a basic Auto-Regressive model of order 1.
     """
 
-    moment_selector = np.mean
     names_in_trace = ["y"]
 
-    def set_default_tags(self):
-        super().set_default_tags()
-        tags = {
-            "capability:insample": False,
-            "capability:pred_int:insample": False,
-        }
-
-        self.set_tags(**tags)
-        return
+    _tags = {
+        "capability:insample": False,
+        "capability:pred_int:insample": False,
+        "capability:pred_int": True,
+        "requires-fh-in-fit": False,
+    }
 
     def build_model(self, y, length: int, X=None, future=0, use_mean: bool = True, **kwargs):
         # parameters
@@ -79,6 +75,7 @@ def test_autoregressive(use_mean: bool):
     with model.set_dynamic_args(use_mean=use_mean):
         model.fit(train)
         predictions = model.predict(fh)
+        proba = model.predict_proba(fh)
 
     posterior = model.result_set_.get_samples(group_by_chain=False)
 
