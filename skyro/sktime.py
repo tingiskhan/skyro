@@ -49,23 +49,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             model_kwargs=model_kwargs,
         )
         BaseForecaster.__init__(self)
-        self.set_default_tags()
-
         self._do_ppc = False
-
-    def set_default_tags(self):
-        """
-        Sets default tags for model.
-        """
-
-        self.set_tags(
-            **{
-                "capability:pred_int": True,
-                "requires-fh-in-fit": False,
-            }
-        )
-
-        return
 
     def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
         raise NotImplementedError("abstract method")
