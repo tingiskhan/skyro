@@ -2,7 +2,7 @@ from ._mixin import BaseNumpyroMixin
 from .sklearn import BaseNumpyroEstimator
 from .sktime import BaseNumpyroForecaster
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 
 __all__ = [
