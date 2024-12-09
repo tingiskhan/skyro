@@ -1,3 +1,4 @@
+import warnings
 from functools import cached_property
 from operator import attrgetter
 from random import randint
@@ -57,9 +58,21 @@ class BaseNumpyroMixin:
         passed_parameters = set((self.model_kwargs or {}).keys())
         expected_parameters = set(self.expected_parameters)
 
-        if self.expected_parameters and passed_parameters != expected_parameters:
-            delta = expected_parameters - passed_parameters
-            raise ValueError(f"Model expects you to pass '{self.expected_parameters}', you're missing '{delta}'")
+        if passed_parameters != expected_parameters:
+            missing = expected_parameters - passed_parameters
+            unexpected = passed_parameters - expected_parameters
+
+            msg = f"Model expects you to pass '{self.expected_parameters}'"
+
+            if missing:
+                msg += f", you're missing '{missing}'"
+
+            if unexpected:
+                msg += f", you passed unexpected parameters '{unexpected}'"
+
+            msg += "!"
+
+            raise ValueError(msg)
 
     def reduce(self, posterior: np.ndarray) -> np.ndarray:
         """
