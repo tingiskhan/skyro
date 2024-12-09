@@ -1,4 +1,5 @@
 import sys
+import warnings
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any, Dict, List
@@ -162,7 +163,12 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     def _predict_proba(self, fh, X, marginal=True):
         predictions = self._do_predict(fh, X, full_posterior=True)
 
-        as_frame = predictions.to_dataframe(name=predictions.name)
+        columns = self._y_metadata["feature_names"]
+        if predictions.name is not None:
+            warnings.warn(f"Name of the frame will be overwritten with '{columns}'!")
+
+        as_frame = predictions.to_dataframe(columns)
+
         if predictions.ndim > 2:
             as_frame = as_frame.squeeze(1).unstack(level=-1)
 
