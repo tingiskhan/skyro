@@ -176,7 +176,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
     def sample_prior_predictive(self, length: int, X=None, **kwargs) -> Dict[str, np.ndarray]:
         """
-        Does posterior/prior predictive checking.
+        Samples from the prior predictive distribution.
 
         Returns:
             Returns samples.
