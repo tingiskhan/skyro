@@ -1,4 +1,3 @@
-import warnings
 from functools import cached_property
 from operator import attrgetter
 from random import randint
