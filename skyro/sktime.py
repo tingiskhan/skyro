@@ -1,4 +1,5 @@
 import sys
+import warnings
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any, Dict, List
@@ -49,23 +50,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
             model_kwargs=model_kwargs,
         )
         BaseForecaster.__init__(self)
-        self.set_default_tags()
-
         self._do_ppc = False
-
-    def set_default_tags(self):
-        """
-        Sets default tags for model.
-        """
-
-        self.set_tags(
-            **{
-                "capability:pred_int": True,
-                "requires-fh-in-fit": False,
-            }
-        )
-
-        return
 
     def build_model(self, y, length: int, X=None, future: int = 0, **kwargs):
         raise NotImplementedError("abstract method")
@@ -178,7 +163,15 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     def _predict_proba(self, fh, X, marginal=True):
         predictions = self._do_predict(fh, X, full_posterior=True)
 
-        as_frame = predictions.to_dataframe(name=predictions.name)
+        columns = self._y_metadata["feature_names"]
+        if predictions.name is not None:
+            warnings.warn(f"Name of the frame will be overwritten with '{columns}'!")
+
+        if len(columns) == 1:
+            columns = columns[0]
+
+        as_frame = predictions.to_dataframe(columns)
+
         if predictions.ndim > 2:
             as_frame = as_frame.squeeze(1).unstack(level=-1)
 
@@ -186,7 +179,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
 
     def sample_prior_predictive(self, length: int, X=None, **kwargs) -> Dict[str, np.ndarray]:
         """
-        Does posterior/prior predictive checking.
+        Samples from the prior predictive distribution.
 
         Returns:
             Returns samples.
@@ -198,7 +191,7 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
     def set_dynamic_args(self, **kwargs) -> Self:
         """
         When modelling in numpyro you sometimes require setting parameters that don't fit into sktime's input API (but
-        scikit-learns' in terms of allowing passing kwargs) as the parameters aren't known until runtime. This is a
+        scikit-learns' in terms of allowing passing kwargs) as the parameters aren't known until inference. This is a
         workaround for that by utilizing a context manager.
 
         Args:
