@@ -167,6 +167,9 @@ class BaseNumpyroForecaster(BaseNumpyroMixin, BaseForecaster):
         if predictions.name is not None:
             warnings.warn(f"Name of the frame will be overwritten with '{columns}'!")
 
+        if len(columns) == 1:
+            columns = columns[0]
+
         as_frame = predictions.to_dataframe(columns)
 
         if predictions.ndim > 2:
